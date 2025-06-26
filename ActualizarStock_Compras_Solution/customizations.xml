@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml>
+  <Workflows>
+    <Workflow>
+      <WorkflowId>{84E4DB67-7A6D-4EAF-B356-34A0ED81C2D5}</WorkflowId>
+      <Name>codx_ActualizarStock_Compras</Name>
+      <DisplayName>Actualizar Stock – Compras</DisplayName>
+      <Category>5</Category>
+    </Workflow>
+  </Workflows>
+</ImportExportXml>

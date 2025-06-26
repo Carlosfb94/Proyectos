@@ -1,0 +1,35 @@
+{  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2025-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {},
+  "triggers": {
+    "whenFileCreated": {
+      "type": "ApiConnectionWebhook",
+      "inputs": {
+        "host": {
+          "connectionName": "sharedSharePoint",
+          "operationId": "GetOnNewFileItems",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+        },
+        "parameters": {
+          "dataset": "https://contoso.sharepoint.com/sites/Almacen",
+          "table": "Documentos",
+          "folderId": "/Entrada Compras",
+          "inferContentType": true
+        }
+      },
+      "runtimeConfiguration": {
+        "concurrency": { "repetition": { "count": 1 } }
+      },
+      "metadata": { "flowSystemMetadata": { "displayName": "Cuando se crea un archivo (solo propiedades)" } }
+    }
+  },
+  "actions": {
+    …(toda la definición)…
+  },
+  "outputs": {},
+  "connectionReferences": {
+    "sharedSharePoint": { "connectionName": "shared-sharepointonline", "source": "Invoker", "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline", "tier": "NotSpecified" },
+    "sharedExcel":      { "connectionName": "shared-excelonlinebusiness","source": "Invoker", "id": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness","tier": "NotSpecified" },
+    "sharedOffice365":  { "connectionName": "shared-office365",         "source": "Invoker", "id": "/providers/Microsoft.PowerApps/apis/shared_office365",         "tier": "NotSpecified" }
+  }
+}
