@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SolutionManifest>
+  <UniqueName>codx_ActualizarStockCompras</UniqueName>
+  <Version>1.0.0.0</Version>
+  <Managed>0</Managed>
+  <SolutionType>0</SolutionType>
+  <Publisher>
+    <Prefix>codx</Prefix>
+  </Publisher>
+  <RootComponents>
+    <RootComponent type="29" id="{84E4DB67-7A6D-4EAF-B356-34A0ED81C2D5}" />
+  </RootComponents>
+</SolutionManifest>
