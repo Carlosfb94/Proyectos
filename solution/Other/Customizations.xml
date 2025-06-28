@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml>
+  <Workflows>
+    <Workflow>
+      <WorkflowId>{11111111-2222-3333-4444-555555555555}</WorkflowId>
+      <Name>ActualizarStock_Compras</Name>
+      <DisplayName>Actualizar Stock – Compras</DisplayName>
+      <Category>5</Category>
+    </Workflow>
+  </Workflows>
+</ImportExportXml>
