@@ -1,0 +1,35 @@
+name: Deploy Power Automate Flow
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: 'Flow JSON file'
+        default: 'flows/CrearPlanilla.json'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - id: get_token
+        run: |
+          TOKEN=$(az account get-access-token --resource https://service.flow.microsoft.com/ --query accessToken -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ steps.get_token.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            --data @"${{ github.event.inputs.file }}" \
+            "https://api.flow.microsoft.com/providers/Microsoft.ProcessSimple/environments/${{ secrets.POWER_ENV_ID }}/flows?api-version=2016-11-01"
+          echo '✅ Flujo creado'
