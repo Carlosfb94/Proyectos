@@ -1,0 +1,143 @@
+{
+  "properties": {
+    "apiVersion": "2016-11-01",
+    "displayName": "CrearPlanilla",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {},
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "NombreArchivo": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "NombreArchivo"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Compose_fileName": {
+          "type": "Compose",
+          "inputs": "@concat(triggerBody()?['NombreArchivo'],'_',utcNow('yyyyMMdd'),'.xlsx')"
+        },
+        "Create_file": {
+          "type": "ApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_onedriveforbusiness",
+              "operationId": "CreateFile",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+            },
+            "parameters": {
+              "folderPath": "/",
+              "name": "@outputs('Compose_fileName')",
+              "fileContent": ""
+            }
+          },
+          "runAfter": {
+            "Compose_fileName": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Add_table": {
+          "type": "ApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_excelonlinebusiness",
+              "operationId": "AddTable",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
+            },
+            "parameters": {
+              "drive": "OneDrive",
+              "file": "@outputs('Compose_fileName')",
+              "worksheet": "Hoja1",
+              "tableName": "Tabla1",
+              "hasHeaders": true,
+              "columns": ["Fecha", "Usuario", "Nota"]
+            }
+          },
+          "runAfter": {
+            "Create_file": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Get_my_profile": {
+          "type": "ApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_office365",
+              "operationId": "GetMyProfileV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+            },
+            "parameters": {}
+          },
+          "runAfter": {
+            "Add_table": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Add_row": {
+          "type": "ApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_excelonlinebusiness",
+              "operationId": "AddRow",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
+            },
+            "parameters": {
+              "drive": "OneDrive",
+              "file": "@outputs('Compose_fileName')",
+              "table": "Tabla1",
+              "row": {
+                "Fecha": "@utcNow()",
+                "Usuario": "@outputs('Get_my_profile')?['mail']",
+                "Nota": "Planilla creada automáticamente"
+              }
+            }
+          },
+          "runAfter": {
+            "Get_my_profile": [
+              "Succeeded"
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "connectionReferences": {
+      "shared_onedriveforbusiness": {
+        "connectionName": "shared-onedriveforbusiness",
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+        "tier": "NotSpecified"
+      },
+      "shared_excelonlinebusiness": {
+        "connectionName": "shared-excelonlinebusiness",
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+        "tier": "NotSpecified"
+      },
+      "shared_office365": {
+        "connectionName": "shared-office365",
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+        "tier": "NotSpecified"
+      }
+    },
+    "flowFailureAlertSubscribed": true,
+    "state": "Started"
+  }
+}
