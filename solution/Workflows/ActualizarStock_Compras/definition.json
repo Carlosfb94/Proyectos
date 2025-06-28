@@ -1,0 +1,192 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2025-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {},
+  "triggers": {
+    "whenFileCreated": {
+      "type": "ApiConnectionWebhook",
+      "inputs": {
+        "host": {
+          "connectionName": "sharedSharePoint",
+          "operationId": "GetOnNewFileItems",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+        },
+        "parameters": {
+          "dataset": "https://<TENANT>.sharepoint.com/sites/Almacen",
+          "table": "Documentos",
+          "folderId": "/Entrada Compras",
+          "inferContentType": true
+        }
+      },
+      "runtimeConfiguration": {
+        "concurrency": {
+          "repetition": {
+            "count": 1
+          }
+        }
+      },
+      "metadata": {
+        "flowSystemMetadata": {
+          "displayName": "Cuando se crea un archivo (solo propiedades)"
+        }
+      }
+    }
+  },
+  "actions": {
+    "listRowsTable": {
+      "type": "OpenApiConnection",
+      "inputs": {
+        "host": {
+          "connectionName": "sharedExcel",
+          "operationId": "ListRowsPresentInTable",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
+        },
+        "parameters": {
+          "source": "https://<TENANT>.sharepoint.com/sites/Almacen",
+          "drive": "Documentos",
+          "file": "@triggerOutputs()?['body/Identifier']",
+          "table": "Compras"
+        },
+        "paginationPolicy": {
+          "minimumItemCount": 5000
+        }
+      },
+      "runAfter": {
+        "whenFileCreated": ["Succeeded"]
+      },
+      "metadata": {
+        "flowSystemMetadata": {
+          "displayName": "Listar filas presentes en una tabla"
+        }
+      }
+    },
+    "selectPurchases": {
+      "type": "Select",
+      "inputs": {
+        "from": "@outputs('listRowsTable')?['body/value']",
+        "map": {
+          "Codigo": "@item()?['Código']",
+          "Cantidad": "@item()?['Pedido']",
+          "FechaLlegada": "@item()?['Fecha llegada']"
+        }
+      },
+      "runAfter": {
+        "listRowsTable": ["Succeeded"]
+      },
+      "metadata": {
+        "flowSystemMetadata": {
+          "displayName": "Seleccionar"
+        }
+      }
+    },
+    "runActualizarStock": {
+      "type": "OpenApiConnection",
+      "inputs": {
+        "host": {
+          "connectionName": "sharedExcel",
+          "operationId": "RunScriptProd",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness"
+        },
+        "parameters": {
+          "source": "https://<TENANT>.sharepoint.com/sites/Almacen",
+          "drive": "Documentos",
+          "file": "/Stock y Pedidos.xlsx",
+          "scriptId": "actualizarStock.ts",
+          "ScriptParameters": {
+            "stockTableName": "Stock",
+            "purchases": "@outputs('selectPurchases')"
+          }
+        }
+      },
+      "runAfter": {
+        "selectPurchases": ["Succeeded"]
+      },
+      "metadata": {
+        "flowSystemMetadata": {
+          "displayName": "Ejecutar script"
+        }
+      }
+    },
+    "moveFileToArchive": {
+      "type": "OpenApiConnection",
+      "inputs": {
+        "host": {
+          "connectionName": "sharedSharePoint",
+          "operationId": "MoveFileAsync",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+        },
+        "parameters": {
+          "dataset": "https://<TENANT>.sharepoint.com/sites/Almacen",
+          "sourceFileId": "@triggerOutputs()?['body/Identifier']",
+          "destinationDataset": "https://<TENANT>.sharepoint.com/sites/Almacen",
+          "destinationFolderPath": "/Archivo Histórico",
+          "nameConflictBehavior": 1
+        }
+      },
+      "runAfter": {
+        "runActualizarStock": ["Succeeded"]
+      },
+      "metadata": {
+        "flowSystemMetadata": {
+          "displayName": "Mover archivo"
+        }
+      }
+    },
+    "countProducts": {
+      "type": "Compose",
+      "inputs": "@length(body('selectPurchases'))",
+      "runAfter": {
+        "moveFileToArchive": ["Succeeded"]
+      },
+      "metadata": {
+        "flowSystemMetadata": {
+          "displayName": "Componer"
+        }
+      }
+    },
+    "sendEmailNotification": {
+      "type": "OpenApiConnection",
+      "inputs": {
+        "host": {
+          "connectionName": "sharedOffice365",
+          "operationId": "SendEmailV2",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+        },
+        "parameters": {
+          "to": "compras@miempresa.com",
+          "subject": "@{concat('Flow Stock actualizado - ', utcNow('yyyy-MM-dd'))}",
+          "body": "@{concat('Se procesaron ', outputs('countProducts'), ' productos desde ', triggerOutputs()?['headers']['x-ms-file-name'], '.')}"
+        }
+      },
+      "runAfter": {
+        "countProducts": ["Succeeded"]
+      },
+      "metadata": {
+        "flowSystemMetadata": {
+          "displayName": "Enviar un correo electrónico (V2)"
+        }
+      }
+    }
+  },
+  "outputs": {},
+  "connectionReferences": {
+    "sharedSharePoint": {
+      "connectionName": "shared-sharepointonline",
+      "source": "Invoker",
+      "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+      "tier": "NotSpecified"
+    },
+    "sharedExcel": {
+      "connectionName": "shared-excelonlinebusiness",
+      "source": "Invoker",
+      "id": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+      "tier": "NotSpecified"
+    },
+    "sharedOffice365": {
+      "connectionName": "shared-office365",
+      "source": "Invoker",
+      "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+      "tier": "NotSpecified"
+    }
+  }
+}

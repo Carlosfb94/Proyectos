@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml>
+  <SolutionManifest>
+    <UniqueName>ActualizarStock_Compras_Solution</UniqueName>
+    <Version>1.0.0.0</Version>
+    <Publisher>
+      <UniqueName>codx</UniqueName>
+      <Prefix>codx</Prefix>
+    </Publisher>
+    <Managed>0</Managed>
+    <RootComponents>
+      <RootComponent type="29" id="{11111111-2222-3333-4444-555555555555}" />
+    </RootComponents>
+  </SolutionManifest>
+  <Workflows>
+    <Workflow path="Workflows/ActualizarStock_Compras/definition.json" id="{11111111-2222-3333-4444-555555555555}" />
+  </Workflows>
+</ImportExportXml>
